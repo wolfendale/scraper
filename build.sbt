@@ -9,6 +9,7 @@ lazy val root = (project in file(".")).
     libraryDependencies ++= Seq(
       "org.jsoup" % "jsoup" % "1.11.3",
       "org.scalactic" %% "scalactic" % "3.0.5",
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+      "com.github.tomakehurst" % "wiremock" % "2.15.0" % Test
     )
   )
