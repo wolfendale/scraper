@@ -14,15 +14,16 @@ class Scraper(httpClient: HttpClient) {
         val domain = new URI(url).getHost
         val newAccumulator = accumulator + (url -> links)
 
-        val newPages = links.view.filterNot {
+        val newPages = newAccumulator.values.toList.flatten.view.filterNot {
           link =>
             newAccumulator.keys.toList.contains(link) || new URI(link).getHost != domain
-        }
+        }.force
 
-        val newPagesAndLinks = newPages.map(scrape(_, newAccumulator)).force
-
-        Future.sequence(newPagesAndLinks).map {
-          _.foldLeft(newAccumulator) { _ ++ _ }
+        newPages.foldLeft(Future.successful(newAccumulator)) {
+          case (a, page) =>
+            a.flatMap {
+              scrape(page, _)
+            }
         }
     }
   }
