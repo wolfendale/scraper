@@ -1,9 +1,10 @@
-package wolfendale
+package wolfendale.scraper
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, MustMatchers}
+import wolfendale.MapHttpClient
 
-class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
+class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
   "a scraper" - {
 
@@ -18,7 +19,7 @@ class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new Scraper(httpClient)
+      val scraper = new BasicScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages
@@ -35,7 +36,7 @@ class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new Scraper(httpClient)
+      val scraper = new BasicScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages
@@ -52,7 +53,7 @@ class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new Scraper(httpClient)
+      val scraper = new BasicScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages

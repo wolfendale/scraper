@@ -1,13 +1,18 @@
-package wolfendale
+package wolfendale.scraper
 
 import java.net.URI
 
-import scala.concurrent.Future
+import wolfendale.HttpClient
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class Scraper(httpClient: HttpClient) {
+class BasicScraper(httpClient: HttpClient) extends Scraper {
 
-  def scrape(url: String, accumulator: Map[String, List[String]] = Map.empty): Future[Map[String, List[String]]] = {
+  override def scrape(url: String): Future[Map[String, List[String]]] =
+    scrape(url, Map.empty)
+
+  private def scrape(url: String, accumulator: Map[String, List[String]]): Future[Map[String, List[String]]] = {
     httpClient.get(url).flatMap {
       links =>
 

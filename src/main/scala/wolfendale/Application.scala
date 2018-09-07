@@ -1,11 +1,13 @@
 package wolfendale
 
+import wolfendale.scraper.BasicScraper
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Application {
 
-  val scraper = new Scraper(JsoupHttpClient)
+  val scraper = new BasicScraper(JsoupHttpClient)
 
   def main(args: Array[String]): Unit = {
 
