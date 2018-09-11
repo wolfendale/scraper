@@ -1,14 +1,20 @@
 package wolfendale.scraper
 
-import org.scalatest.concurrent.ScalaFutures
+import akka.actor.ActorSystem
+import akka.stream.testkit.scaladsl.StreamTestKit.assertAllStagesStopped
+import akka.stream.{ActorMaterializer, Materializer}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}
 import wolfendale.MapHttpClient
 
-class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
+class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures with IntegrationPatience {
+
+  implicit val system: ActorSystem = ActorSystem("test")
+  implicit val materializer: Materializer = ActorMaterializer()
 
   "a scraper" - {
 
-    "must return all the links on each page" in {
+    "must return all the links on each page" in assertAllStagesStopped {
 
       val pages = Map(
         "https://example.com" -> List(
@@ -19,14 +25,14 @@ class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new BasicScraper(httpClient)
+      val scraper = new StreamScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages
       }
     }
 
-    "must not not loop" in {
+    "must not not loop" in assertAllStagesStopped {
 
       val pages = Map(
         "https://example.com" -> List(
@@ -36,14 +42,14 @@ class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new BasicScraper(httpClient)
+      val scraper = new StreamScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages
       }
     }
 
-    "must not scraper other domains" in {
+    "must not scrape other domains" in assertAllStagesStopped {
 
       val pages = Map(
         "https://example.com" -> List(
@@ -53,14 +59,14 @@ class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new BasicScraper(httpClient)
+      val scraper = new StreamScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com")) {
         _ mustEqual pages
       }
     }
 
-    "must scrape all pages" in {
+    "must scrape all pages" in assertAllStagesStopped {
 
       val pages = Map(
         "https://example.com/a" -> List(
@@ -85,7 +91,7 @@ class BasicScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new BasicScraper(httpClient)
+      val scraper = new StreamScraper(httpClient)
 
       whenReady(scraper.scrape("https://example.com/a")) {
         _ mustEqual pages

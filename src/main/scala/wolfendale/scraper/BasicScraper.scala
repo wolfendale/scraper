@@ -2,6 +2,10 @@ package wolfendale.scraper
 
 import java.net.URI
 
+import scalax.collection.Graph
+import scalax.collection.GraphPredef._
+import scalax.collection.GraphEdge._
+import scalax.collection.GraphEdge.DiEdge
 import wolfendale.HttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
