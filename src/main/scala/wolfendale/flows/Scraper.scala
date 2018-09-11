@@ -1,36 +1,30 @@
-package wolfendale.scraper
+package wolfendale.flows
 
 import java.net.URI
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
-import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, Keep, Sink, Source, Zip}
-import akka.stream.{Attributes, FlowShape, Materializer}
+import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, Zip}
+import akka.stream.{Attributes, FlowShape}
 import wolfendale.HttpClient
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
+object Scraper {
 
-class StreamScraper(httpClient: HttpClient, timeout: FiniteDuration = 5.minutes)
-                   (implicit system: ActorSystem, materializer: Materializer) extends Scraper {
-
-  private implicit val logging: LoggingAdapter = Logging(system, this.getClass)
-
-  override def scrape(url: String): Future[Map[String, List[String]]] = {
-
-    val domain = new URI(url).getHost
-
-    val flow = Flow.fromGraph(GraphDSL.create() {
+  def apply(domain: String, httpClient: HttpClient)(implicit system: ActorSystem): Flow[String, Map[String, List[String]], NotUsed] =
+    Flow.fromGraph(GraphDSL.create() {
       implicit builder =>
 
         import GraphDSL.Implicits._
+
+        implicit val logging: LoggingAdapter = Logging(system, this.getClass)
 
         val bcast1 = builder.add(Broadcast[String](2))
         val bcast2 = builder.add(Broadcast[Map[String, List[String]]](2))
         val zipper = builder.add(Zip[String, List[String]])
         val concat = builder.add(Concat[String](2))
 
-        val scraper = Flow[String].throttle(1, 1.second)
+        val scraper = Flow[String]
           .log("scraping")
           .withAttributes(Attributes.logLevels(onElement = Logging.InfoLevel))
           .mapAsyncUnordered(4)(httpClient.get)
@@ -54,21 +48,12 @@ class StreamScraper(httpClient: HttpClient, timeout: FiniteDuration = 5.minutes)
           .takeWhile(_.nonEmpty)
           .mapConcat(_.headOption.toList)
 
-        concat.out    ~> bcast1.in
+        concat.out ~> bcast1.in
         bcast1.out(0) ~> zipper.in0
-        bcast1.out(1) ~> scraper    ~> zipper.in1
-        zipper.out    ~> scan       ~> bcast2.in
-        bcast2.out(1) ~> newLinks   ~> concat.in(1)
+        bcast1.out(1) ~> scraper ~> zipper.in1
+        zipper.out ~> scan ~> bcast2.in
+        bcast2.out(1) ~> newLinks ~> concat.in(1)
 
         FlowShape(concat.in(0), bcast2.out(0))
     })
-
-    val source = Source.single(url)
-    val sink = Sink.last[Map[String, List[String]]]
-
-    source
-      .via(flow)
-      .takeWithin(timeout)
-      .toMat(sink)(Keep.right).run()
-  }
 }

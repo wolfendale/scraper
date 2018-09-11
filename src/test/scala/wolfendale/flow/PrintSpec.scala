@@ -1,12 +1,23 @@
-package wolfendale.printer
+package wolfendale.flow
 
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.util.ByteString
 import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.concurrent.ScalaFutures
+import wolfendale.flows.Print
+import wolfendale.printer.SitemapSimplePrinter
+import akka.stream.testkit.scaladsl.StreamTestKit.assertAllStagesStopped
 
-class SitemapSimplePrinterSpec extends FreeSpec with MustMatchers {
+class PrintSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
-  "simple printer" - {
+  private implicit val system: ActorSystem = ActorSystem("test")
+  private implicit val materializer: Materializer = ActorMaterializer()
 
-    "must print a sitemap as a list of pages that have been scraped" in {
+  "a printer flow" - {
+
+    "must print a sitemap" in assertAllStagesStopped {
 
       val sitemap = Map(
         "https://example.com/a" -> List(
@@ -30,8 +41,6 @@ class SitemapSimplePrinterSpec extends FreeSpec with MustMatchers {
         "https://example.com/h" -> List.empty
       )
 
-      val result = SitemapSimplePrinter.print("title", sitemap)
-
       val expected =
         """https://example.com/e
           |https://example.com/f
@@ -42,7 +51,14 @@ class SitemapSimplePrinterSpec extends FreeSpec with MustMatchers {
           |https://example.com/d
           |https://example.com/a""".stripMargin
 
-      result.utf8String mustEqual expected
+      val source = Source.single(sitemap)
+      val sink = Sink.head[ByteString]
+
+      val result = source.via(Print("title", SitemapSimplePrinter)).toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
+        _.utf8String mustEqual expected
+      }
     }
   }
 }

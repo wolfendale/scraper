@@ -44,7 +44,7 @@ class SitemapDotPrinterSpec extends FreeSpec with MustMatchers {
 
       val result = SitemapDotPrinter.print("title", sitemap)
 
-      SitemapDotPrinter.print("title", sitemap) mustEqual expected
+      result.utf8String mustEqual expected
     }
   }
 }

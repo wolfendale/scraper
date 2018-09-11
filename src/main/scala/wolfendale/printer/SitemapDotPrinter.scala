@@ -1,5 +1,6 @@
 package wolfendale.printer
 
+import akka.util.ByteString
 import scalax.collection.Graph
 import scalax.collection.GraphPredef._
 import scalax.collection.io.dot._
@@ -14,7 +15,7 @@ object SitemapDotPrinter extends SitemapPrinter {
         Some((dotRoot, DotEdgeStmt(s.toString, t.toString)))
     }
 
-  override def print(title: String, sitemap: Map[String, List[String]]): String = {
+  override def print(title: String, sitemap: Map[String, List[String]]): ByteString = {
 
     val dotGraph = DotRootGraph(
       directed = true,
@@ -26,6 +27,6 @@ object SitemapDotPrinter extends SitemapPrinter {
         g ++ links.filter(_.nonEmpty).map(link ~> _)
     }
 
-    graph.toDot(dotGraph, edgeTransformer(dotGraph))
+    ByteString(graph.toDot(dotGraph, edgeTransformer(dotGraph)))
   }
 }

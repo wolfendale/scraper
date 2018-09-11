@@ -1,9 +1,10 @@
 package wolfendale.printer
 
+import akka.util.ByteString
 import scopt.Read
 
 trait SitemapPrinter {
-  def print(title: String, sitemap: Map[String, List[String]]): String
+  def print(title: String, sitemap: Map[String, List[String]]): ByteString
 }
 
 object SitemapPrinter {

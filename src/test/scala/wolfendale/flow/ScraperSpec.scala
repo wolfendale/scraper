@@ -1,18 +1,20 @@
-package wolfendale.scraper
+package wolfendale.flow
 
 import akka.actor.ActorSystem
-import akka.stream.testkit.scaladsl.StreamTestKit.assertAllStagesStopped
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.concurrent.ScalaFutures
+import akka.stream.testkit.scaladsl.StreamTestKit.assertAllStagesStopped
 import wolfendale.MapHttpClient
+import wolfendale.flows.Scraper
 
-class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures with IntegrationPatience {
+class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
 
-  implicit val system: ActorSystem = ActorSystem("test")
-  implicit val materializer: Materializer = ActorMaterializer()
+  private implicit val system: ActorSystem = ActorSystem("test")
+  private implicit val materializer: Materializer = ActorMaterializer()
 
-  "a scraper" - {
+  "a scraper flow" - {
 
     "must return all the links on each page" in assertAllStagesStopped {
 
@@ -25,9 +27,14 @@ class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures wit
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new StreamScraper(httpClient)
+      val source = Source.single("https://example.com")
+      val sink = Sink.last[Map[String, List[String]]]
 
-      whenReady(scraper.scrape("https://example.com")) {
+      val result = source
+        .via(Scraper("example.com", httpClient))
+        .toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
         _ mustEqual pages
       }
     }
@@ -42,9 +49,14 @@ class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures wit
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new StreamScraper(httpClient)
+      val source = Source.single("https://example.com")
+      val sink = Sink.last[Map[String, List[String]]]
 
-      whenReady(scraper.scrape("https://example.com")) {
+      val result = source
+        .via(Scraper("example.com", httpClient))
+        .toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
         _ mustEqual pages
       }
     }
@@ -59,9 +71,14 @@ class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures wit
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new StreamScraper(httpClient)
+      val source = Source.single("https://example.com")
+      val sink = Sink.last[Map[String, List[String]]]
 
-      whenReady(scraper.scrape("https://example.com")) {
+      val result = source
+        .via(Scraper("example.com", httpClient))
+        .toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
         _ mustEqual pages
       }
     }
@@ -91,9 +108,14 @@ class StreamScraperSpec extends FreeSpec with MustMatchers with ScalaFutures wit
 
       val httpClient = MapHttpClient(pages)
 
-      val scraper = new StreamScraper(httpClient)
+      val source = Source.single("https://example.com/a")
+      val sink = Sink.last[Map[String, List[String]]]
 
-      whenReady(scraper.scrape("https://example.com/a")) {
+      val result = source
+        .via(Scraper("example.com", httpClient))
+        .toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
         _ mustEqual pages
       }
     }

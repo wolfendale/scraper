@@ -1,7 +1,7 @@
 package wolfendale
 
-import java.io.File
 import java.net.URI
+import java.nio.file.{Path, Paths}
 
 import scopt.Read
 import wolfendale.printer.{SitemapDotPrinter, SitemapPrinter}
@@ -11,9 +11,9 @@ import scala.util.Try
 
 final case class Config(
                          url: URI = new URI("http://www.example.com"),
-                         out: File = new File("./sitemap"),
+                         out: Path = Paths.get("./sitemap"),
                          printer: SitemapPrinter = SitemapDotPrinter,
-                         timeout: FiniteDuration = 30.seconds)
+                         timeout: FiniteDuration = 5.seconds)
 
 object Config extends scopt.OptionParser[Config]("scraper") {
 
@@ -24,12 +24,15 @@ object Config extends scopt.OptionParser[Config]("scraper") {
           .get
     }
 
+  private implicit val pathRead: Read[Path] =
+    Read.reads(Paths.get(_))
+
   arg[URI]("<url to scrape>").action {
     (url, config) =>
       config.copy(url = url)
   }
 
-  arg[File]("<output file>").action {
+  arg[Path]("<output file>").action {
     (file, config) =>
       config.copy(out = file)
   }
@@ -42,7 +45,7 @@ object Config extends scopt.OptionParser[Config]("scraper") {
   opt[FiniteDuration]('t', "timeout").action {
     (timeout, config) =>
       config.copy(timeout = timeout)
-  }.text("the maximum time which the scraper should run for (default: 30s)")
+  }.text("the maximum time which the scraper should run for (default: 5s)")
 
   note("")
   note("  printer options are:")

@@ -1,15 +1,15 @@
 package wolfendale
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import wolfendale.printer.SitemapDotPrinter
-import wolfendale.scraper.StreamScraper
+import akka.event.{Logging, LoggingAdapter}
+import akka.stream.{ActorMaterializer, KillSwitches}
+import akka.stream.scaladsl.{FileIO, Keep, Source}
+import wolfendale.flows.{Last, Print, Scraper}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 
 object Application {
-
 
   def main(args: Array[String]): Unit = {
 
@@ -18,18 +18,29 @@ object Application {
 
         implicit val system: ActorSystem = ActorSystem("scraper")
         implicit val materializer: ActorMaterializer = ActorMaterializer()
+        implicit val ec: ExecutionContext = system.dispatcher
+        implicit val logging: LoggingAdapter = Logging(system, this.getClass)
 
-        try {
+        val (killswitch, result) = Source.single(config.url.toString)
+          .via(Scraper(config.url.getHost, new DefaultHttpClient))
+          .viaMat(KillSwitches.single)(Keep.right)
+          .takeWithin(config.timeout)
+          .log("scraping")
+          .via(Last[Map[String, List[String]]])
+          .log("returning result")
+          .via(Print(config.url.toString, config.printer))
+          .log("printing result")
+          .toMat(FileIO.toPath(config.out))(Keep.both).run()
 
-          val url = args(0)
+        result.onComplete {
+          _ =>
+            system.terminate()
+        }
 
-          val scraper = new StreamScraper(new DefaultHttpClient, config.timeout)
-          val sitemap = Await.result(scraper.scrape(url), Duration.Inf)
-
-          println(SitemapDotPrinter.print(url, sitemap))
-
-        } finally {
-          system.terminate()
+        // todo for some reason this doesn't print the graph when interrupted
+        sys.addShutdownHook {
+          killswitch.shutdown()
+          Await.result(result, 30.seconds)
         }
     }
   }
