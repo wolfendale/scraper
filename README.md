@@ -1,3 +1,9 @@
+Running from SBT:
+
+```
+sbt "run <args>"
+```
+
 ```
 Usage: scraper [options] <url to scrape> <output file>
 
