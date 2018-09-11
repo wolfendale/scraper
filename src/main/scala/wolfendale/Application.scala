@@ -2,6 +2,7 @@ package wolfendale
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import wolfendale.printer.SitemapDotPrinter
 import wolfendale.scraper.StreamScraper
 
 import scala.concurrent.Await
@@ -9,31 +10,27 @@ import scala.concurrent.duration._
 
 object Application {
 
-  implicit val system: ActorSystem = ActorSystem("scraper")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   def main(args: Array[String]): Unit = {
 
-    try {
+    Config.parse(args, Config()).foreach {
+      config =>
 
-      val url = args(0)
+        implicit val system: ActorSystem = ActorSystem("scraper")
+        implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-      val timeout =
-        Duration(s"${args(1)} ${args(2)}")
-          .asInstanceOf[FiniteDuration]
+        try {
 
-      val scraper = new StreamScraper(new DefaultHttpClient, timeout)
+          val url = args(0)
 
-      val start = System.currentTimeMillis
-      val sitemap = Await.result(scraper.scrape(url), Duration.Inf)
-      val end = System.currentTimeMillis
-      val duration = (end - start) / 1000
+          val scraper = new StreamScraper(new DefaultHttpClient, config.timeout)
+          val sitemap = Await.result(scraper.scrape(url), Duration.Inf)
 
-      println(SitemapPrinter.print(url, sitemap))
-      println(s"Took $duration seconds")
+          println(SitemapDotPrinter.print(url, sitemap))
 
-    } finally {
-      system.terminate()
+        } finally {
+          system.terminate()
+        }
     }
   }
 }

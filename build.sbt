@@ -11,6 +11,7 @@ lazy val root = (project in file(".")).
       "org.scalactic" %% "scalactic" % "3.0.5",
       "com.typesafe.akka" %% "akka-stream" % "2.5.16",
       "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.16",
+      "com.github.scopt" %% "scopt" % "3.7.0",
       "com.typesafe.akka" %% "akka-http"   % "10.1.5",
       "com.softwaremill.sttp" %% "core" % "1.3.2",
       "com.softwaremill.sttp" %% "akka-http-backend" % "1.3.2",
