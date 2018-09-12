@@ -5,6 +5,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.http.Fault
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FreeSpec, MustMatchers}
 
@@ -73,6 +74,20 @@ class DefaultHttpClientSpec extends FreeSpec with MustMatchers with ScalaFutures
 
       whenReady(result) {
         _ must contain only server.url("foo.html")
+      }
+    }
+
+    "must recover a failed future" in {
+
+      server.stubFor(
+        get(urlEqualTo("/foo"))
+          .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
+      )
+
+      val result = client.get(server.url("foo"))
+
+      whenReady(result) {
+        _ mustBe empty
       }
     }
   }

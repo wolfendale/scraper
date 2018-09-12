@@ -2,10 +2,10 @@ package wolfendale.flow
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{ActorMaterializer, Materializer}
-import org.scalatest.{FreeSpec, MustMatchers}
-import org.scalatest.concurrent.ScalaFutures
 import akka.stream.testkit.scaladsl.StreamTestKit.assertAllStagesStopped
+import akka.stream.{ActorMaterializer, Materializer}
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{FreeSpec, MustMatchers}
 import wolfendale.MapHttpClient
 import wolfendale.flows.Scraper
 
@@ -15,6 +15,26 @@ class ScraperSpec extends FreeSpec with MustMatchers with ScalaFutures {
   private implicit val materializer: Materializer = ActorMaterializer()
 
   "a scraper flow" - {
+
+    "must scrape a page with no links" in assertAllStagesStopped {
+
+      val pages = Map(
+        "https://example.com" -> List.empty
+      )
+
+      val httpClient = MapHttpClient(pages)
+
+      val source = Source.single("https://example.com")
+      val sink = Sink.last[Map[String, List[String]]]
+
+      val result = source
+        .via(Scraper("example.com", httpClient))
+        .toMat(sink)(Keep.right).run()
+
+      whenReady(result) {
+        _ mustEqual pages
+      }
+    }
 
     "must return all the links on each page" in assertAllStagesStopped {
 

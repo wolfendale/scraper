@@ -6,8 +6,10 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, Zip}
-import akka.stream.{Attributes, FlowShape}
+import akka.stream.{ActorAttributes, Attributes, FlowShape, Supervision}
 import wolfendale.HttpClient
+
+import scala.util.control.NonFatal
 
 object Scraper {
 
@@ -31,7 +33,6 @@ object Scraper {
 
         val scan = Flow[(String, List[String])]
           .scan(Map.empty[String, List[String]])(_ + _).drop(1)
-          .log("result")
 
         val newLinks = Flow[Map[String, List[String]]]
           .map {
